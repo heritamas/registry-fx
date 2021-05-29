@@ -1,15 +1,9 @@
 package regfx.dialogs;
 
-import java.net.URL;
-import java.util.Map;
-import java.util.ResourceBundle;
-import java.util.logging.Logger;
-import java.util.stream.Collectors;
-
 import javafx.beans.property.SimpleStringProperty;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.control.ButtonType;
+import javafx.scene.control.Button;
 import javafx.scene.control.DialogPane;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
@@ -18,6 +12,12 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
 import regfx.model.ConnectModel;
 import regfx.model.Pair;
+
+import java.net.URL;
+import java.util.Map;
+import java.util.ResourceBundle;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 public class ConnectController implements DialogController<Map<String, String>> {
 
@@ -44,18 +44,22 @@ public class ConnectController implements DialogController<Map<String, String>> 
     private TableColumn<Pair<String, String>, String> valueColumn;
 
     @FXML
+    private Button addButton;
+
+    @FXML
+    void addParameter(ActionEvent event) {
+        model.getUnusedParameter().ifPresent(key -> {
+            model.getTablerows().add(new Pair<String, String>(key, "***"));
+        });
+    }
+
+    @FXML
     void initialize() {
         assert connectDialog != null : "fx:id=\"connectDialog\" was not injected: check your FXML file 'dialog-connect.fxml'.";
-        assert parameterTable != null : "fx:id=\"content\" was not injected: check your FXML file 'dialog-connect.fxml'.";
-        assert parameterColumn != null : "fx:id=\"propertyColumn\" was not injected: check your FXML file 'dialog-connect.fxml'.";
+        assert parameterTable != null : "fx:id=\"parameterTable\" was not injected: check your FXML file 'dialog-connect.fxml'.";
+        assert parameterColumn != null : "fx:id=\"parameterColumn\" was not injected: check your FXML file 'dialog-connect.fxml'.";
         assert valueColumn != null : "fx:id=\"valueColumn\" was not injected: check your FXML file 'dialog-connect.fxml'.";
-
-        connectDialog.lookupButton(ButtonType.NEXT).addEventFilter(ActionEvent.ACTION, event -> {
-            model.getUnusedParameter().ifPresent(key -> {
-                model.getTablerows().add(new Pair<String, String>(key, "***"));
-            });
-            event.consume();
-        });
+        assert addButton != null : "fx:id=\"addButton\" was not injected: check your FXML file 'dialog-connect.fxml'.";
 
         parameterColumn.setCellFactory(ComboBoxTableCell.forTableColumn(model.getParameters()));
         parameterColumn.setCellValueFactory( new PropertyValueFactory<Pair<String, String>, String>("key"));
