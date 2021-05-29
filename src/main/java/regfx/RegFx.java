@@ -7,6 +7,9 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
 
 /**
  * JavaFX App
@@ -14,6 +17,22 @@ import java.io.IOException;
 public class RegFx extends Application {
 
     private static Scene scene;
+
+    static {
+        final InputStream inputStream = RegFx.class.getResourceAsStream("logging.properties");
+        try
+        {
+            LogManager.getLogManager().readConfiguration(inputStream);
+        }
+        catch (final IOException e)
+        {
+            Logger.getAnonymousLogger().severe("Could not load default logging.properties file");
+            Logger.getAnonymousLogger().severe(e.getMessage());
+        }
+
+    }
+
+    Logger log = Logger.getLogger("regfx");
 
     @Override
     public void start(Stage stage) throws IOException {
