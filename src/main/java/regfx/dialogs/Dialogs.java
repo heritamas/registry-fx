@@ -17,12 +17,13 @@ public class Dialogs {
 
         Dialog dialog = new Dialog<T>();
         dialog.setDialogPane(dp);
-        dialog.setResultConverter( bType -> controller.getResult() );
+        dialog.setResultConverter( bType -> {
+            if (bType == ButtonType.APPLY)
+                return controller.getResult();
+            else
+                return defaultResult;
+        });
 
-        T result  = (T) dialog.showAndWait()
-                .filter(response -> response == ButtonType.APPLY)
-                .orElseGet(defaultResult);
-
-        return result;
+        return (T) dialog.showAndWait().get();
     }
 }

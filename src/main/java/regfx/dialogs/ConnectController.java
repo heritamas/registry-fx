@@ -87,9 +87,10 @@ public class ConnectController implements DialogController<Map<String, String>> 
                 .map(Pair::toString)
                 .forEach(log::info);
 
-        return model.getTablerows().stream().collect(
+        Map<String, String> result = model.getTablerows().stream().collect(
                 Collectors.toUnmodifiableMap(Pair::getKey, Pair::getValue)
         );
 
+        return result;
     }
 }

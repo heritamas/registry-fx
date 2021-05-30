@@ -11,11 +11,11 @@
   <children>
     <MenuBar VBox.vgrow="NEVER">
       <menus>
-        <Menu fx:id="registryMenu" mnemonicParsing="false" text="Regsistry">
+        <Menu fx:id="registryMenu" mnemonicParsing="false" text="Registry">
           <items>
             <MenuItem fx:id="connectMenu" mnemonicParsing="false" onAction="#connectToRegistry" text="Connect..." />
             <SeparatorMenuItem mnemonicParsing="false" />
-            <MenuItem mnemonicParsing="false" text="Preferences…" />
+                  <Menu fx:id="preferencesMenu" mnemonicParsing="false" text="Preferences…" />
             <SeparatorMenuItem mnemonicParsing="false" />
             <MenuItem fx:id="quitMenu" mnemonicParsing="false" onAction="#quitFromApp" text="Quit" />
           </items>
