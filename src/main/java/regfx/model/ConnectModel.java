@@ -14,7 +14,8 @@ public class ConnectModel {
             FXCollections.unmodifiableObservableList(
                     FXCollections.observableArrayList(
                             "hostname",
-                            "port", "path")
+                            "port",
+                            "path")
             );
 
     private final ObservableList<Pair<String, String>> tablerows = FXCollections.observableArrayList();

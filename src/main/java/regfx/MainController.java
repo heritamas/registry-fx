@@ -4,32 +4,35 @@
 
 package regfx;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.hortonworks.registries.schemaregistry.SchemaMetadataInfo;
+import com.hortonworks.registries.schemaregistry.utils.ObjectMapperUtils;
 import javafx.application.Platform;
 import javafx.collections.MapChangeListener;
 import javafx.event.ActionEvent;
-import javafx.event.EventType;
 import javafx.fxml.FXML;
-import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
 import regfx.dialogs.Dialogs;
 import regfx.model.MainModel;
 
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.BackingStoreException;
+
+class Schemas {
+    @JsonProperty
+    List<SchemaMetadataInfo> entities;
+}
 
 public class MainController {
 
@@ -71,28 +74,30 @@ public class MainController {
         }
     }
 
-    void connectToRegistry(Map<String, String> props) {
+    void connectToRegistry(Map<String, String> props)  {
         String hostname = props.get("hostname");
         String port = props.get("port");
         String path = props.get("path");
 
-        HttpResponse<String> response = null;
+        log.info("Connecting ot registry ...");
         try {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(new URI("http", null, hostname, Integer.parseInt(port), path, null, null))
                     .GET()
                     .build();
-            response = HttpClient.newBuilder()
+            HttpResponse<String> response = HttpClient.newBuilder()
                     .build()
-                    .send(request, HttpResponse.BodyHandlers.);
-            
+                    .send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() == 200) {
+                Schemas result = ObjectMapperUtils.deserialize(response.<String>body(), Schemas.class);
+                result.entities.size();
+            }
+
         } catch (Exception e) {
             log.throwing("MainController", "connectToRegistry", e);
         }
-        log.info(response.body());
-        
-        log.info("Connecting ot registry ...");
-        SchemaMetadataInfo metadataInfo = 
+
     }
 
     @FXML
