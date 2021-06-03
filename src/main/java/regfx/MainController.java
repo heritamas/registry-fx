@@ -18,10 +18,16 @@ import regfx.dialogs.Dialogs;
 import regfx.model.MainModel;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ResourceBundle;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.BackingStoreException;
 
@@ -58,12 +64,35 @@ public class MainController {
             model.addPreferences(props.get("hostname") + ":" + props.get("port"), props);
         }
 
-        connectToRegistry(props);
+        try {
+            connectToRegistry(props);
+        } catch (Exception e) {
+            log.throwing("MainController", "connectToRegistry", e);
+        }
     }
 
     void connectToRegistry(Map<String, String> props) {
-        //TODO
+        String hostname = props.get("hostname");
+        String port = props.get("port");
+        String path = props.get("path");
+
+        HttpResponse<String> response = null;
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(new URI("http", null, hostname, Integer.parseInt(port), path, null, null))
+                    .GET()
+                    .build();
+            response = HttpClient.newBuilder()
+                    .build()
+                    .send(request, HttpResponse.BodyHandlers.);
+            
+        } catch (Exception e) {
+            log.throwing("MainController", "connectToRegistry", e);
+        }
+        log.info(response.body());
+        
         log.info("Connecting ot registry ...");
+        SchemaMetadataInfo metadataInfo = 
     }
 
     @FXML
