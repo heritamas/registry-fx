@@ -60,8 +60,13 @@ public class MainModel {
         props.forEach(nodeForUrl::put);
     }
 
-    private void removeNode(String nodeName) {
-        userUrlsNode.remove(nodeName);
+    private void removeNode(String nodeName)  {
+        try {
+            userUrlsNode.node(nodeName).removeNode();
+        } catch (BackingStoreException e) {
+            log.throwing(this.getClass().getPackageName(), "MainModel", e);
+        }
+
     }
 
     private void savePreferences() throws BackingStoreException {
