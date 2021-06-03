@@ -5,10 +5,15 @@
 package regfx;
 
 import javafx.application.Platform;
+import javafx.collections.MapChangeListener;
 import javafx.event.ActionEvent;
+import javafx.event.EventType;
 import javafx.fxml.FXML;
+import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import regfx.dialogs.Dialogs;
 import regfx.model.MainModel;
 
@@ -17,10 +22,12 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ResourceBundle;
+import java.util.logging.Logger;
 import java.util.prefs.BackingStoreException;
 
 public class MainController {
 
+    private Logger log = Logger.getLogger("regfx");
     private MainModel model = new MainModel();
 
     @FXML // ResourceBundle that was given to the FXMLLoader
@@ -41,14 +48,22 @@ public class MainController {
     @FXML // fx:id="quitMenu"
     private MenuItem quitMenu; // Value injected by FXMLLoader
 
-    public MainController() throws BackingStoreException {
-    }
+    public MainController() throws BackingStoreException { }
 
     @FXML
     void connectToRegistry(ActionEvent event) throws IOException {
         Map<String, String> props = Dialogs.loadAndShowDialog("dialog-connect", HashMap<String, String>::new);
 
-        model.addPreferences(props.get("hostname") + ":" + props.get("port"), props);
+        if (props.size() != 0) {
+            model.addPreferences(props.get("hostname") + ":" + props.get("port"), props);
+        }
+
+        connectToRegistry(props);
+    }
+
+    void connectToRegistry(Map<String, String> props) {
+        //TODO
+        log.info("Connecting ot registry ...");
     }
 
     @FXML
@@ -63,8 +78,28 @@ public class MainController {
         assert preferencesMenu != null : "fx:id=\"preferencesMenu\" was not injected: check your FXML file 'regfx-main.fxml'.";
         assert quitMenu != null : "fx:id=\"quitMenu\" was not injected: check your FXML file 'regfx-main.fxml'.";
 
-        model.setPreferenceItems(preferencesMenu.getItems());
+        model.addPreferencesListener(createPrefsListener());
         model.readPreferences();
 
+    }
+
+    private MapChangeListener<? super String,? super Map<String, String>> createPrefsListener() {
+        return chg -> {
+            if (chg.wasAdded()) {
+                addMenuItem(chg.getKey(), chg.getValueAdded());
+            } else if (chg.wasRemoved()) {
+                preferencesMenu.getItems().removeIf(mi -> mi.getText().contains(chg.getKey()));
+            }
+        };
+    }
+
+    private void addMenuItem(String key, Map<String, String> props) {
+        MenuItem connectItem = new MenuItem("Connect to " + key);
+        connectItem.setOnAction(event -> connectToRegistry(props));
+
+        MenuItem deleteItem = new MenuItem("Delete " + key);
+        deleteItem.setOnAction(event -> model.removePreferences(key));
+
+        preferencesMenu.getItems().addAll(connectItem, deleteItem);
     }
 }

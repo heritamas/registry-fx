@@ -2,9 +2,7 @@ package regfx.model;
 
 import javafx.collections.FXCollections;
 import javafx.collections.MapChangeListener;
-import javafx.collections.ObservableList;
 import javafx.collections.ObservableMap;
-import javafx.scene.control.MenuItem;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -22,16 +20,12 @@ public class MainModel {
     private Logger log = Logger.getLogger("regfx");
 
     private ObservableMap<String, Map<String, String>> observablePreferences = FXCollections.observableMap(new HashMap<>());
-    private ObservableList<MenuItem> menuItems;
 
     public MainModel() {
-        observablePreferences.addListener((MapChangeListener<? super String, ? super Map<String, String>>) chg -> {
+        addPreferencesListener((MapChangeListener<? super String, ? super Map<String, String>>) chg -> {
             if (chg.wasAdded()) {
-                MenuItem newItem = new MenuItem(chg.getKey());
-                menuItems.add(newItem);
                 setNode(chg.getKey(), chg.getValueAdded());
             } else if (chg.wasRemoved()) {
-                menuItems.removeIf(mi -> mi.getText().equals(chg.getKey()));
                 removeNode(chg.getKey());
             }
 
@@ -41,7 +35,10 @@ public class MainModel {
                 log.throwing(this.getClass().getPackageName(), "MainModel", e);
             }
         });
+    }
 
+    public void addPreferencesListener(MapChangeListener<? super String, ? super Map<String, String>> listener) {
+        observablePreferences.addListener(listener);
     }
 
     private void readNode(String nodeName)  {
@@ -79,7 +76,7 @@ public class MainModel {
         observablePreferences.put(key, props);
     }
 
-    public void setPreferenceItems(ObservableList<MenuItem> items) {
-        this.menuItems = items;
+    public void removePreferences(String key) {
+        observablePreferences.remove(key);
     }
 }
