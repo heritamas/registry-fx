@@ -13,8 +13,13 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.control.cell.MapValueFactory;
 import regfx.dialogs.Dialogs;
 import regfx.model.MainModel;
+import regfx.model.SchemaEnum;
+import regfx.model.SchemaModel;
 
 import java.io.IOException;
 import java.net.URI;
@@ -22,6 +27,7 @@ import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,12 +44,31 @@ public class MainController {
 
     private Logger log = Logger.getLogger("regfx");
     private MainModel model = new MainModel();
+    private SchemaModel schemaModel = new SchemaModel();
 
     @FXML // ResourceBundle that was given to the FXMLLoader
     private ResourceBundle resources;
 
     @FXML // URL location of the FXML file that was given to the FXMLLoader
     private URL location;
+
+    @FXML
+    private TableView<Map<SchemaEnum, String>> schemaTable;
+
+    @FXML
+    private TableColumn<Map, String> idColumn;
+
+    @FXML
+    private TableColumn<Map, String> nameColumn;
+
+    @FXML
+    private TableColumn<Map, String> descColumn;
+
+    @FXML
+    private TableColumn<Map, String> typeColumn;
+
+    @FXML
+    private TableColumn<Map, String> compColumn;
 
     @FXML // fx:id="registryMenu"
     private Menu registryMenu; // Value injected by FXMLLoader
@@ -92,6 +117,16 @@ public class MainController {
             if (response.statusCode() == 200) {
                 Schemas result = ObjectMapperUtils.deserialize(response.<String>body(), Schemas.class);
                 result.entities.size();
+                schemaModel.getTable().clear();
+                for (SchemaMetadataInfo metadataInfo : result.entities) {
+                    Map<SchemaEnum, String> map = new EnumMap<>(SchemaEnum.class);
+                    map.put(SchemaEnum.ID, String.valueOf(metadataInfo.getId()));
+                    map.put(SchemaEnum.NAME, metadataInfo.getSchemaMetadata().getName());
+                    map.put(SchemaEnum.DESCRIPTION, metadataInfo.getSchemaMetadata().getDescription());
+                    map.put(SchemaEnum.TYPE, metadataInfo.getSchemaMetadata().getType());
+                    map.put(SchemaEnum.COMPATIBILITY, metadataInfo.getSchemaMetadata().getCompatibility().name());
+                    schemaModel.getTable().add(map);
+                }
             }
 
         } catch (Exception e) {
@@ -114,6 +149,14 @@ public class MainController {
 
         model.addPreferencesListener(createPrefsListener());
         model.readPreferences();
+        
+        schemaTable.setItems(schemaModel.getTable());
+        idColumn.setCellValueFactory(new MapValueFactory<String>(SchemaEnum.ID));
+        nameColumn.setCellValueFactory(new MapValueFactory<String>(SchemaEnum.NAME));
+        descColumn.setCellValueFactory(new MapValueFactory<String>(SchemaEnum.DESCRIPTION));
+        typeColumn.setCellValueFactory(new MapValueFactory<String>(SchemaEnum.TYPE));
+        compColumn.setCellValueFactory(new MapValueFactory<String>(SchemaEnum.COMPATIBILITY));
+        
 
     }
 

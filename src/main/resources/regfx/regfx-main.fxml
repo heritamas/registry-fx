@@ -4,10 +4,12 @@
 <?import javafx.scene.control.MenuBar?>
 <?import javafx.scene.control.MenuItem?>
 <?import javafx.scene.control.SeparatorMenuItem?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox prefHeight="400.0" prefWidth="640.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="regfx.MainController">
+<VBox xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="regfx.MainController">
   <children>
     <MenuBar VBox.vgrow="NEVER">
       <menus>
@@ -27,6 +29,17 @@
         </Menu>
       </menus>
     </MenuBar>
-    <AnchorPane maxHeight="-1.0" maxWidth="-1.0" prefHeight="-1.0" prefWidth="-1.0" VBox.vgrow="ALWAYS" />
+    <AnchorPane maxHeight="-1.0" maxWidth="-1.0" prefHeight="-1.0" prefWidth="-1.0" VBox.vgrow="ALWAYS">
+         <children>
+            <TableView fx:id="schemaTable" tableMenuButtonVisible="true" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+              <columns>
+                <TableColumn fx:id="idColumn" maxWidth="1.7976931348623157E308" minWidth="150.0" prefWidth="-1.0" text="ID" />
+                <TableColumn fx:id="nameColumn" maxWidth="1.7976931348623157E308" minWidth="150.0" prefWidth="-1.0" text="NAME" />
+                  <TableColumn fx:id="descColumn" maxWidth="1.7976931348623157E308" minWidth="150.0" prefWidth="-1.0" text="DESCRIPTION" />
+                  <TableColumn fx:id="typeColumn" maxWidth="1.7976931348623157E308" minWidth="150.0" prefWidth="-1.0" text="TYPE" />
+                  <TableColumn fx:id="compColumn" maxWidth="1.7976931348623157E308" minWidth="150.0" prefWidth="-1.0" text="COMPATIBILITY" />
+              </columns>
+            </TableView>
+         </children></AnchorPane>
   </children>
 </VBox>
