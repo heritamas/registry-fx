@@ -10,8 +10,5 @@ public class SchemaModel {
     public ObservableList<Map<SchemaEnum, String>> getTable() {
         return table;
     }
-
-    public void setTable(ObservableList<Map<SchemaEnum, String>> table) {
-        this.table = table;
-    }
+    
 }

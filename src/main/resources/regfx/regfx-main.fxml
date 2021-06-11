@@ -4,6 +4,7 @@
 <?import javafx.scene.control.MenuBar?>
 <?import javafx.scene.control.MenuItem?>
 <?import javafx.scene.control.SeparatorMenuItem?>
+<?import javafx.scene.control.SplitPane?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.layout.AnchorPane?>
@@ -31,15 +32,26 @@
     </MenuBar>
     <AnchorPane maxHeight="-1.0" maxWidth="-1.0" prefHeight="-1.0" prefWidth="-1.0" VBox.vgrow="ALWAYS">
          <children>
-            <TableView fx:id="schemaTable" tableMenuButtonVisible="true" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-              <columns>
-                <TableColumn fx:id="idColumn" maxWidth="1.7976931348623157E308" minWidth="150.0" prefWidth="-1.0" text="ID" />
-                <TableColumn fx:id="nameColumn" maxWidth="1.7976931348623157E308" minWidth="150.0" prefWidth="-1.0" text="NAME" />
-                  <TableColumn fx:id="descColumn" maxWidth="1.7976931348623157E308" minWidth="150.0" prefWidth="-1.0" text="DESCRIPTION" />
-                  <TableColumn fx:id="typeColumn" maxWidth="1.7976931348623157E308" minWidth="150.0" prefWidth="-1.0" text="TYPE" />
-                  <TableColumn fx:id="compColumn" maxWidth="1.7976931348623157E308" minWidth="150.0" prefWidth="-1.0" text="COMPATIBILITY" />
-              </columns>
-            </TableView>
+            <SplitPane dividerPositions="0.5" orientation="VERTICAL" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+               <items>
+                  <TableView fx:id="schemaTable" tableMenuButtonVisible="true">
+                    <columns>
+                      <TableColumn fx:id="idColumn" editable="false" maxWidth="1.7976931348623157E308" minWidth="150.0" prefWidth="-1.0" text="ID" />
+                      <TableColumn fx:id="nameColumn" editable="false" maxWidth="1.7976931348623157E308" minWidth="150.0" prefWidth="-1.0" text="NAME" />
+                        <TableColumn fx:id="descColumn" editable="false" maxWidth="1.7976931348623157E308" minWidth="150.0" prefWidth="-1.0" text="DESCRIPTION" />
+                        <TableColumn fx:id="typeColumn" editable="false" maxWidth="1.7976931348623157E308" minWidth="150.0" prefWidth="-1.0" text="TYPE" />
+                        <TableColumn fx:id="compColumn" editable="false" maxWidth="1.7976931348623157E308" minWidth="150.0" prefWidth="-1.0" text="COMPATIBILITY" />
+                    </columns>
+                  </TableView>
+                  <TableView fx:id="versionTable" prefHeight="200.0" prefWidth="200.0">
+                    <columns>
+                      <TableColumn fx:id="versionIdColumn" editable="false" maxWidth="1.7976931348623157E308" minWidth="150.0" prefWidth="-1.0" text="ID" />
+                      <TableColumn fx:id="versionVersionColumn" editable="false" maxWidth="1.7976931348623157E308" minWidth="150.0" prefWidth="-1.0" text="VERSION" />
+                        <TableColumn fx:id="versionShemaTextColumn" editable="false" maxWidth="1.7976931348623157E308" minWidth="150.0" prefWidth="-1.0" text="SCHEMA TEXT" />
+                    </columns>
+                  </TableView>
+               </items>
+            </SplitPane>
          </children></AnchorPane>
   </children>
 </VBox>

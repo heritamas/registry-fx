@@ -6,6 +6,7 @@ package regfx;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hortonworks.registries.schemaregistry.SchemaMetadataInfo;
+import com.hortonworks.registries.schemaregistry.SchemaVersionInfo;
 import com.hortonworks.registries.schemaregistry.utils.ObjectMapperUtils;
 import javafx.application.Platform;
 import javafx.collections.MapChangeListener;
@@ -20,6 +21,8 @@ import regfx.dialogs.Dialogs;
 import regfx.model.MainModel;
 import regfx.model.SchemaEnum;
 import regfx.model.SchemaModel;
+import regfx.model.VersionEnum;
+import regfx.model.VersionModel;
 
 import java.io.IOException;
 import java.net.URI;
@@ -40,11 +43,17 @@ class Schemas {
     List<SchemaMetadataInfo> entities;
 }
 
+class SchemaVersions {
+    @JsonProperty
+    List<SchemaVersionInfo> entities;
+}
+
 public class MainController {
 
     private Logger log = Logger.getLogger("regfx");
     private MainModel model = new MainModel();
     private SchemaModel schemaModel = new SchemaModel();
+    private VersionModel versionModel = new VersionModel();
 
     @FXML // ResourceBundle that was given to the FXMLLoader
     private ResourceBundle resources;
@@ -70,6 +79,19 @@ public class MainController {
     @FXML
     private TableColumn<Map, String> compColumn;
 
+    @FXML
+    private TableView<Map<VersionEnum, String>> versionTable;
+
+    @FXML
+    private TableColumn<Map, String> versionIdColumn;
+
+    @FXML
+    private TableColumn<Map, String> versionVersionColumn;
+
+    @FXML
+    private TableColumn<Map, String> versionShemaTextColumn;
+
+
     @FXML // fx:id="registryMenu"
     private Menu registryMenu; // Value injected by FXMLLoader
 
@@ -82,6 +104,8 @@ public class MainController {
     @FXML // fx:id="quitMenu"
     private MenuItem quitMenu; // Value injected by FXMLLoader
 
+    private Map<String, String> schemaRegistryProps = new HashMap<>();
+
     public MainController() throws BackingStoreException { }
 
     @FXML
@@ -90,10 +114,12 @@ public class MainController {
 
         if (props.size() != 0) {
             model.addPreferences(props.get("hostname") + ":" + props.get("port"), props);
+            schemaRegistryProps.clear();
+            schemaRegistryProps.putAll(props);
         }
 
         try {
-            connectToRegistry(props);
+            connectToRegistry(schemaRegistryProps);
         } catch (Exception e) {
             log.throwing("MainController", "connectToRegistry", e);
         }
@@ -102,7 +128,10 @@ public class MainController {
     void connectToRegistry(Map<String, String> props)  {
         String hostname = props.get("hostname");
         String port = props.get("port");
-        String path = props.get("path");
+        String path = "/api/v1/schemaregistry/schemas";
+
+        schemaRegistryProps.clear();
+        schemaRegistryProps.putAll(props);
 
         log.info("Connecting ot registry ...");
         try {
@@ -134,6 +163,39 @@ public class MainController {
         }
 
     }
+    
+    void getSchemaVersion(Map<SchemaEnum, String> metadata) {
+
+        String hostname = schemaRegistryProps.get("hostname");
+        String port = schemaRegistryProps.get("port");
+        String path = "/api/v1/schemaregistry/schemas/" + metadata.get(SchemaEnum.NAME)+"/versions";
+        String query = "branch=MASTER";
+
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(new URI("http", null, hostname, Integer.parseInt(port), path, query, null))
+                    .GET()
+                    .build();
+            HttpResponse<String> response = HttpClient.newBuilder()
+                    .build()
+                    .send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() == 200) {
+                SchemaVersions result = ObjectMapperUtils.deserialize(response.<String>body(), SchemaVersions.class);
+                result.entities.size();
+                versionModel.getTable().clear();
+                for (SchemaVersionInfo schemaVersion : result.entities) {
+                    Map<VersionEnum, String> map = new EnumMap<>(VersionEnum.class);
+                    map.put(VersionEnum.VERSION_ID, String.valueOf(schemaVersion.getId()));
+                    map.put(VersionEnum.VERSION_VERSION, String.valueOf(schemaVersion.getVersion()));
+                    map.put(VersionEnum.SCHEMATEXT, schemaVersion.getSchemaText());
+                    versionModel.getTable().add(map);
+                }
+                
+            }
+        } catch (Exception e) {
+            log.throwing("MainController", "getSchemaVersion", e);
+        }
+    }
 
     @FXML
     void quitFromApp(ActionEvent event) {
@@ -156,6 +218,15 @@ public class MainController {
         descColumn.setCellValueFactory(new MapValueFactory<String>(SchemaEnum.DESCRIPTION));
         typeColumn.setCellValueFactory(new MapValueFactory<String>(SchemaEnum.TYPE));
         compColumn.setCellValueFactory(new MapValueFactory<String>(SchemaEnum.COMPATIBILITY));
+        schemaTable.getSelectionModel().selectedItemProperty().addListener((observableValue, oldValue, newValue) -> {
+            getSchemaVersion(newValue);
+        });
+                
+        
+        versionTable.setItems(versionModel.getTable());
+        versionIdColumn.setCellValueFactory(new MapValueFactory<String>(VersionEnum.VERSION_ID));
+        versionVersionColumn.setCellValueFactory(new MapValueFactory<String>(VersionEnum.VERSION_VERSION));
+        versionShemaTextColumn.setCellValueFactory(new MapValueFactory<String>(VersionEnum.SCHEMATEXT));
         
 
     }
