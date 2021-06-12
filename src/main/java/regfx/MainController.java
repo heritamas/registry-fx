@@ -4,13 +4,16 @@
 
 package regfx;
 
+import com.hortonworks.registries.schemaregistry.SchemaBranch;
 import com.hortonworks.registries.schemaregistry.SchemaMetadataInfo;
 import com.hortonworks.registries.schemaregistry.SchemaVersionInfo;
-import com.hortonworks.registries.schemaregistry.utils.ObjectMapperUtils;
 import javafx.application.Platform;
+import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.collections.MapChangeListener;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TableColumn;
@@ -18,6 +21,7 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.cell.MapValueFactory;
 import regfx.dialogs.Dialogs;
 import regfx.model.MainModel;
+import regfx.model.SchemaBranches;
 import regfx.model.SchemaEnum;
 import regfx.model.SchemaModel;
 import regfx.model.SchemaVersions;
@@ -26,12 +30,7 @@ import regfx.model.VersionEnum;
 import regfx.model.VersionModel;
 
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
@@ -72,6 +71,9 @@ public class MainController {
     private TableColumn<Map, String> compColumn;
 
     @FXML
+    private ChoiceBox<String> branchesChoice;
+
+    @FXML
     private TableView<Map<VersionEnum, String>> versionTable;
 
     @FXML
@@ -97,6 +99,10 @@ public class MainController {
     private MenuItem quitMenu; // Value injected by FXMLLoader
 
     private Map<String, String> schemaRegistryProps = new HashMap<>();
+
+    private ReadOnlyObjectProperty<String> activeBranch;
+
+    private ReadOnlyObjectProperty<Map<SchemaEnum, String>> activeSchema;
 
     public MainController() throws BackingStoreException { }
 
@@ -136,12 +142,12 @@ public class MainController {
 
     }
 
-    void getSchemaVersion(Map<SchemaEnum, String> metadata) {
+    void getSchemaVersion(Map<SchemaEnum, String> metadata, String branch) {
 
         Optional<SchemaVersions> result = HttpUtil.Rest.of(
                 schemaRegistryProps,
                 "/api/v1/schemaregistry/schemas/" + metadata.get(SchemaEnum.NAME) + "/versions",
-                "branch=MASTER")
+                "branch=" + branch)
                 .execute(SchemaVersions.class);
 
         result.ifPresent(schemaVersions -> {
@@ -155,6 +161,24 @@ public class MainController {
             }
         });
     }
+
+    private void updateBranches(Map<SchemaEnum, String> metadata) {
+        Optional<SchemaBranches> result = HttpUtil.Rest.of(
+                schemaRegistryProps,
+                "/api/v1/schemaregistry/schemas/" + metadata.get(SchemaEnum.NAME) + "/branches")
+                .execute(SchemaBranches.class);
+
+        result.ifPresent(schemaBranches -> {
+            ObservableList<String> branchesModel = schemaModel.getBranches();
+            branchesModel.clear();
+            for (SchemaBranch schemaBranch : schemaBranches.entities) {
+                branchesModel.add(schemaBranch.getName());
+            }
+            branchesChoice.getSelectionModel().selectFirst();
+        });
+    }
+
+
 
     private void updateCurrentRegistry(Map<String, String> props) {
         schemaRegistryProps.clear();
@@ -183,10 +207,17 @@ public class MainController {
         typeColumn.setCellValueFactory(new MapValueFactory<String>(SchemaEnum.TYPE));
         compColumn.setCellValueFactory(new MapValueFactory<String>(SchemaEnum.COMPATIBILITY));
         schemaTable.getSelectionModel().selectedItemProperty().addListener((observableValue, oldValue, newValue) -> {
-            getSchemaVersion(newValue);
+            updateBranches(newValue);
+            getSchemaVersion(newValue, activeBranch.getValue());
         });
-                
-        
+        activeSchema = schemaTable.getSelectionModel().selectedItemProperty();
+
+        branchesChoice.setItems(schemaModel.getBranches());
+        branchesChoice.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
+            getSchemaVersion(activeSchema.getValue(), newValue);
+        });
+        activeBranch = branchesChoice.getSelectionModel().selectedItemProperty();
+
         versionTable.setItems(versionModel.getTable());
         versionIdColumn.setCellValueFactory(new MapValueFactory<String>(VersionEnum.VERSION_ID));
         versionVersionColumn.setCellValueFactory(new MapValueFactory<String>(VersionEnum.VERSION_VERSION));
