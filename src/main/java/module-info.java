@@ -7,8 +7,8 @@ module regfx {
     requires schema.registry.common;
     requires com.fasterxml.jackson.databind;
 
-    opens regfx to javafx.fxml, com.fasterxml.jackson.databind;
+    opens regfx to javafx.fxml;
     opens regfx.dialogs to javafx.fxml;
-    opens regfx.model to javafx.base;
+    opens regfx.model to javafx.base, com.fasterxml.jackson.databind;
     exports regfx;
 }

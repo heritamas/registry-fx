@@ -4,7 +4,6 @@
 
 package regfx;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hortonworks.registries.schemaregistry.SchemaMetadataInfo;
 import com.hortonworks.registries.schemaregistry.SchemaVersionInfo;
 import com.hortonworks.registries.schemaregistry.utils.ObjectMapperUtils;
@@ -21,32 +20,25 @@ import regfx.dialogs.Dialogs;
 import regfx.model.MainModel;
 import regfx.model.SchemaEnum;
 import regfx.model.SchemaModel;
+import regfx.model.SchemaVersions;
+import regfx.model.Schemas;
 import regfx.model.VersionEnum;
 import regfx.model.VersionModel;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.EnumMap;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
 import java.util.prefs.BackingStoreException;
-
-class Schemas {
-    @JsonProperty
-    List<SchemaMetadataInfo> entities;
-}
-
-class SchemaVersions {
-    @JsonProperty
-    List<SchemaVersionInfo> entities;
-}
 
 public class MainController {
 
@@ -112,89 +104,61 @@ public class MainController {
     void connectToRegistry(ActionEvent event) throws IOException {
         Map<String, String> props = Dialogs.loadAndShowDialog("dialog-connect", HashMap<String, String>::new);
 
-        if (props.size() != 0) {
+        if (props.size() != 0 && props.containsKey("hostname") && props.containsKey("port")) {
             model.addPreferences(props.get("hostname") + ":" + props.get("port"), props);
-            schemaRegistryProps.clear();
-            schemaRegistryProps.putAll(props);
+        } else {
+            log.warning(String.format("Not enough connection parameters: %s", props));
+            return;
         }
 
         try {
-            connectToRegistry(schemaRegistryProps);
+            connectToRegistry(props);
         } catch (Exception e) {
             log.throwing("MainController", "connectToRegistry", e);
         }
     }
 
-    void connectToRegistry(Map<String, String> props)  {
-        String hostname = props.get("hostname");
-        String port = props.get("port");
-        String path = "/api/v1/schemaregistry/schemas";
-
-        schemaRegistryProps.clear();
-        schemaRegistryProps.putAll(props);
-
-        log.info("Connecting ot registry ...");
-        try {
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(new URI("http", null, hostname, Integer.parseInt(port), path, null, null))
-                    .GET()
-                    .build();
-            HttpResponse<String> response = HttpClient.newBuilder()
-                    .build()
-                    .send(request, HttpResponse.BodyHandlers.ofString());
-
-            if (response.statusCode() == 200) {
-                Schemas result = ObjectMapperUtils.deserialize(response.<String>body(), Schemas.class);
-                result.entities.size();
-                schemaModel.getTable().clear();
-                for (SchemaMetadataInfo metadataInfo : result.entities) {
-                    Map<SchemaEnum, String> map = new EnumMap<>(SchemaEnum.class);
-                    map.put(SchemaEnum.ID, String.valueOf(metadataInfo.getId()));
-                    map.put(SchemaEnum.NAME, metadataInfo.getSchemaMetadata().getName());
-                    map.put(SchemaEnum.DESCRIPTION, metadataInfo.getSchemaMetadata().getDescription());
-                    map.put(SchemaEnum.TYPE, metadataInfo.getSchemaMetadata().getType());
-                    map.put(SchemaEnum.COMPATIBILITY, metadataInfo.getSchemaMetadata().getCompatibility().name());
-                    schemaModel.getTable().add(map);
-                }
+    void connectToRegistry(Map<String, String> props) {
+        Optional<Schemas> result = HttpUtil.Rest.of(props, "/api/v1/schemaregistry/schemas").execute(Schemas.class);
+        result.ifPresent(schemas -> {
+            updateCurrentRegistry(props);
+            schemaModel.getTable().clear();
+            for (SchemaMetadataInfo metadataInfo : schemas.entities) {
+                Map<SchemaEnum, String> map = new EnumMap<>(SchemaEnum.class);
+                map.put(SchemaEnum.ID, String.valueOf(metadataInfo.getId()));
+                map.put(SchemaEnum.NAME, metadataInfo.getSchemaMetadata().getName());
+                map.put(SchemaEnum.DESCRIPTION, metadataInfo.getSchemaMetadata().getDescription());
+                map.put(SchemaEnum.TYPE, metadataInfo.getSchemaMetadata().getType());
+                map.put(SchemaEnum.COMPATIBILITY, metadataInfo.getSchemaMetadata().getCompatibility().name());
+                schemaModel.getTable().add(map);
             }
-
-        } catch (Exception e) {
-            log.throwing("MainController", "connectToRegistry", e);
-        }
+        });
 
     }
-    
+
     void getSchemaVersion(Map<SchemaEnum, String> metadata) {
 
-        String hostname = schemaRegistryProps.get("hostname");
-        String port = schemaRegistryProps.get("port");
-        String path = "/api/v1/schemaregistry/schemas/" + metadata.get(SchemaEnum.NAME)+"/versions";
-        String query = "branch=MASTER";
+        Optional<SchemaVersions> result = HttpUtil.Rest.of(
+                schemaRegistryProps,
+                "/api/v1/schemaregistry/schemas/" + metadata.get(SchemaEnum.NAME) + "/versions",
+                "branch=MASTER")
+                .execute(SchemaVersions.class);
 
-        try {
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(new URI("http", null, hostname, Integer.parseInt(port), path, query, null))
-                    .GET()
-                    .build();
-            HttpResponse<String> response = HttpClient.newBuilder()
-                    .build()
-                    .send(request, HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() == 200) {
-                SchemaVersions result = ObjectMapperUtils.deserialize(response.<String>body(), SchemaVersions.class);
-                result.entities.size();
-                versionModel.getTable().clear();
-                for (SchemaVersionInfo schemaVersion : result.entities) {
-                    Map<VersionEnum, String> map = new EnumMap<>(VersionEnum.class);
-                    map.put(VersionEnum.VERSION_ID, String.valueOf(schemaVersion.getId()));
-                    map.put(VersionEnum.VERSION_VERSION, String.valueOf(schemaVersion.getVersion()));
-                    map.put(VersionEnum.SCHEMATEXT, schemaVersion.getSchemaText());
-                    versionModel.getTable().add(map);
-                }
-                
+        result.ifPresent(schemaVersions -> {
+            versionModel.getTable().clear();
+            for (SchemaVersionInfo schemaVersion : schemaVersions.entities) {
+                Map<VersionEnum, String> map = new EnumMap<>(VersionEnum.class);
+                map.put(VersionEnum.VERSION_ID, String.valueOf(schemaVersion.getId()));
+                map.put(VersionEnum.VERSION_VERSION, String.valueOf(schemaVersion.getVersion()));
+                map.put(VersionEnum.SCHEMATEXT, schemaVersion.getSchemaText());
+                versionModel.getTable().add(map);
             }
-        } catch (Exception e) {
-            log.throwing("MainController", "getSchemaVersion", e);
-        }
+        });
+    }
+
+    private void updateCurrentRegistry(Map<String, String> props) {
+        schemaRegistryProps.clear();
+        schemaRegistryProps.putAll(props);
     }
 
     @FXML
